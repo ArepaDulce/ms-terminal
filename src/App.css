@@ -1,0 +1,146 @@
+:root {
+  /* Paleta Dark Mode / Midnight */
+  --bg-app: #0f172a;          /* Fondo azul muy oscuro / noche */
+  --bg-panel: #1e293b;        /* Tarjetas un poco más claras para contrastar */
+  --texto-principal: #f8fafc; /* Texto casi blanco puro */
+  --texto-secundario: #94a3b8;/* Gris platinado para subtítulos */
+  --borde-suave: #334155;     /* Bordes oscuros sutiles */
+  
+  /* Acentos vibrantes para modo oscuro */
+  --acento-primario: #8b5cf6; /* Morado eléctrico */
+  --acento-hover: #7c3aed;    /* Morado más oscuro al pasar el mouse */
+  --exito: #10b981;           /* Verde esmeralda brillante */
+  --alerta: #ef4444;          /* Rojo sangre/alerta */
+}
+
+/* Reseteo básico y aplicación del fondo */
+body {
+  background-color: var(--bg-app);
+  color: var(--texto-principal);
+  margin: 0;
+  transition: background-color 0.3s ease;
+}
+
+/* Efectos globales para que no tengas que escribirlos en cada componente */
+button {
+  transition: all 0.2s ease-in-out;
+}
+
+button:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+button:active:not(:disabled) {
+  transform: translateY(0);
+}
+/* --- NUEVA ESTRUCTURA RESPONSIVA --- */
+.app-layout {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.main-content {
+  padding-bottom: 120px; /* Espacio para que el carrito flotante no tape contenido en móvil */
+  transition: all 0.3s;
+}
+
+.vitrina-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 15px;
+  margin-top: 15px;
+}
+
+/* --- CARRITO (MÓVIL POR DEFECTO) --- */
+.cart-bar {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 500px;
+  background-color: var(--bg-panel);
+  border: 1px solid var(--borde-suave);
+  border-radius: 25px;
+  padding: 15px 25px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.cart-bar.expanded {
+  bottom: 0;
+  width: 100%;
+  max-width: 600px;
+  height: 85vh;
+  border-radius: 25px 25px 0 0;
+  padding: 25px;
+}
+
+.cart-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+.cart-details {
+  display: none;
+  margin-top: 20px;
+  flex: 1;
+  overflow-y: auto;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.cart-bar.expanded .cart-details {
+  display: flex;
+  flex-direction: column;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- CARRITO (ESCRITORIO / PANTALLA GRANDE) --- */
+@media (min-width: 1024px) {
+  .app-layout {
+    display: flex; /* Divide la pantalla en dos columnas */
+    gap: 25px;
+    align-items: flex-start;
+  }
+  
+  .main-content {
+    flex: 1; /* El catálogo toma el espacio restante */
+    padding-bottom: 0; /* Quitamos el margen inferior porque ya no hay barra flotante */
+  }
+
+  .cart-bar {
+    position: sticky; /* Se queda pegado arriba mientras bajas por el catálogo */
+    top: 20px;
+    bottom: auto;
+    left: auto;
+    transform: none;
+    width: 380px; /* Ancho fijo para la factura */
+    height: calc(100vh - 40px); /* Toma todo el alto de la pantalla */
+    border-radius: 15px;
+    padding: 20px;
+    max-width: none;
+  }
+
+  .cart-summary {
+    display: none; /* Ocultamos la píldora de total en PC porque el carrito siempre está abierto */
+  }
+
+  .cart-details {
+    display: flex !important; /* Forzamos a que el carrito siempre esté visible */
+    flex-direction: column;
+    margin-top: 0;
+    height: 100%;
+  }
+}
