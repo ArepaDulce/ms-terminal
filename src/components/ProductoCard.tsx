@@ -8,6 +8,7 @@ interface Props {
 
 export function ProductoCard({ producto, tasaBCV, onAgregarAlCarrito }: Props) {
   const precioBs = (producto.precioUSD * tasaBCV).toFixed(2);
+  const estaEnPeligro = producto.stock > 0 && producto.stock <= producto.minStock;
 
   return (
     <div style={{ 
@@ -17,9 +18,15 @@ export function ProductoCard({ producto, tasaBCV, onAgregarAlCarrito }: Props) {
       minWidth: '180px', flex: '1 1 180px'
     }}>
       <h4 style={{ margin: 0, color: 'var(--texto-principal)', fontSize: '15px' }}>{producto.nombre}</h4>
-      <span style={{ fontSize: '11px', color: 'var(--texto-secundario)', backgroundColor: 'var(--bg-app)', padding: '3px 6px', borderRadius: '4px', alignSelf: 'flex-start' }}>
-        {producto.categoria}
-      </span>
+      
+      <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+        <span style={{ fontSize: '11px', color: 'var(--texto-secundario)', backgroundColor: 'var(--bg-app)', padding: '3px 6px', borderRadius: '4px' }}>
+          {producto.categoria}
+        </span>
+        <span style={{ fontSize: '11px', color: 'var(--acento-primario)', backgroundColor: 'var(--bg-app)', padding: '3px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
+          {producto.sku}
+        </span>
+      </div>
       
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -30,9 +37,15 @@ export function ProductoCard({ producto, tasaBCV, onAgregarAlCarrito }: Props) {
             Bs {precioBs}
           </span>
         </div>
-        <span style={{ fontSize: '12px', fontWeight: 'bold', color: producto.stock > 0 ? 'var(--texto-secundario)' : 'var(--alerta)' }}>
-          Stock: {producto.stock}
-        </span>
+        
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+          <span style={{ fontSize: '12px', fontWeight: 'bold', color: producto.stock === 0 ? 'var(--alerta)' : (estaEnPeligro ? '#f59e0b' : 'var(--texto-secundario)') }}>
+            Stock: {producto.stock}
+          </span>
+          {estaEnPeligro && (
+            <span style={{ fontSize: '10px', color: '#f59e0b', fontWeight: 'bold' }}>¡Poco stock!</span>
+          )}
+        </div>
       </div>
       
       <button 

@@ -1,171 +1,178 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo } from 'react';
 import './App.css';
 import { TasaBCV } from './components/TasaBCV';
 import { ProductoCard } from './components/ProductoCard';
 import { Carrito } from './components/Carrito';
 import { Filtros } from './components/Filtros';
-import { HistorialModal } from './components/HistorialModal';
-import { AdminModal } from './components/AdminModal'; // Importamos el Panel CRUD
+import { VistaHistorial } from './components/VistaHistorial';
+import { VistaInventario } from './components/VistaInventario';
+import { VistaConfiguracion } from './components/VistaConfiguracion';
+import { Sidebar } from './components/Sidebar';
 import { usePOS } from './hooks/usePOS';
+import { CheckoutModal } from './components/CheckoutModal';
+import { LoginScreen } from './components/LoginScreen';
 
 function App() {
-  const { 
-    tasaActual, setTasaActual, 
-    inventario, 
-    carrito, 
-    historialVentas, 
-    agregarAlCarrito, restarDelCarrito, eliminarDelCarrito, cobrarVenta,
-    exportarRespaldo, importarRespaldo,
-    crearProducto, actualizarProducto, eliminarProducto, borrarLogVenta,
-    vaciarHistorial
-  } = usePOS();
+    const {
+        tasaActual, setTasaActual, inventario, carrito, historialVentas,
+        agregarAlCarrito, restarDelCarrito, eliminarDelCarrito, cobrarVenta,
+        exportarRespaldo, importarRespaldo, crearProducto, actualizarProducto,
+        eliminarProducto, borrarLogVenta, vaciarHistorial, temaActual, setTemaActual,
+        configuracion, setConfiguracion, sesion, setSesion
+    } = usePOS();
 
-  const [busqueda, setBusqueda] = useState('');
-  const [categoriaFiltro, setCategoriaFiltro] = useState('');
-  const [mostrarHistorial, setMostrarHistorial] = useState(false);
-  const [carritoExpandido, setCarritoExpandido] = useState(false);
-  
-  // NUEVO ESTADO: Controla si el panel de Admin está abierto
-  const [mostrarAdmin, setMostrarAdmin] = useState(false);
-  
-  const fileInputRef = useRef<HTMLInputElement>(null);
+    const [vistaActual, setVistaActual] = useState('pos');
+    const [busqueda, setBusqueda] = useState('');
+    const [categoriaFiltro, setCategoriaFiltro] = useState('');
+    const [carritoExpandido, setCarritoExpandido] = useState(false);
+    const [menuAbierto, setMenuAbierto] = useState(false);
+    const [mostrarCheckout, setMostrarCheckout] = useState(false);
 
-  const categoriasUnicas = useMemo(() => {
-    const categorias = inventario.map(p => p.categoria);
-    return Array.from(new Set(categorias));
-  }, [inventario]);
+    // ⚠️ REGLA DE ORO: TODOS LOS HOOKS ARRIBA ⚠️
+    const categoriasUnicas = useMemo(() => Array.from(new Set(inventario.map(p => p.categoria))), [inventario]);
 
-  const inventarioFiltrado = useMemo(() => {
-    return inventario.filter(prod => {
-      const coincideBusqueda = prod.nombre.toLowerCase().includes(busqueda.toLowerCase());
-      const coincideCategoria = categoriaFiltro === '' || prod.categoria === categoriaFiltro;
-      return coincideBusqueda && coincideCategoria;
-    });
-  }, [inventario, busqueda, categoriaFiltro]);
+    const inventarioFiltrado = useMemo(() => {
+        return inventario.filter(prod => {
+            const termino = busqueda.toLowerCase();
+            const coincideBusqueda = prod.nombre.toLowerCase().includes(termino) || (prod.sku && prod.sku.toLowerCase().includes(termino));
+            const coincideCategoria = categoriaFiltro === '' || prod.categoria === categoriaFiltro;
+            return coincideBusqueda && coincideCategoria;
+        });
+    }, [inventario, busqueda, categoriaFiltro]);
 
-  const totalItems = carrito.reduce((acc, item) => acc + item.cantidad, 0);
-  const totalUSD = carrito.reduce((acc, item) => acc + (item.producto.precioUSD * item.cantidad), 0);
+    const totalItems = carrito.reduce((acc, item) => acc + item.cantidad, 0);
+    const totalUSD = carrito.reduce((acc, item) => acc + (item.producto.precioUSD * item.cantidad), 0);
 
-  const manejarSubida = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const result = event.target?.result;
-      if (typeof result === 'string') {
-        importarRespaldo(result);
+    const manejarEscaneo = () => {
+      if (!busqueda.trim()) return;
+      const codigoEscaneado = busqueda.trim().toUpperCase();
+      const prod = inventario.find(p => (p.sku || '').toUpperCase() === codigoEscaneado);
+      if (prod) {
+        agregarAlCarrito(prod);
+        setBusqueda('');
+      } else {
+        alert(`Código SKU: ${codigoEscaneado} no encontrado en el inventario.`);
+        setBusqueda(''); 
       }
     };
-    reader.readAsText(file);
-    e.target.value = ''; 
-  };
 
-  return (
-    <div style={{ padding: '20px', fontFamily: 'Segoe UI, Tahoma, sans-serif' }}>
-      <div className="app-layout">
-        
-        <div className="main-content">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--borde-suave)', paddingBottom: '15px', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
-            <h1 style={{ color: 'var(--texto-principal)', margin: 0, fontSize: '24px' }}>
-              Modern Store POS 🛒
-            </h1>
-            
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-              {/* NUEVO BOTÓN: Abre el panel de inventario */}
-              <button onClick={() => setMostrarAdmin(true)} style={{ backgroundColor: 'var(--bg-panel)', color: 'var(--texto-principal)', border: '1px dashed var(--acento-primario)', padding: '8px 12px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
-                ⚙️ Inventario
-              </button>
+    // ⛔ INTERCEPTOR DE SEGURIDAD (Siempre DEBAJO de los Hooks) ⛔
+    if (!sesion) {
+        return <LoginScreen configuracion={configuracion} onLogin={setSesion} />;
+    }
 
-              <button onClick={exportarRespaldo} style={{ backgroundColor: 'var(--bg-panel)', color: 'var(--texto-principal)', border: '1px solid var(--borde-suave)', padding: '8px 12px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
-                ⬇️ Guardar Info
-              </button>
-              <button onClick={() => fileInputRef.current?.click()} style={{ backgroundColor: 'var(--bg-panel)', color: 'var(--texto-principal)', border: '1px solid var(--borde-suave)', padding: '8px 12px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
-                ⬆️ Subir Info
-              </button>
-              <input type="file" accept=".json" ref={fileInputRef} onChange={manejarSubida} style={{ display: 'none' }} />
+    return (
+      <div style={{ padding: '20px', fontFamily: 'Segoe UI, Tahoma, sans-serif' }}>
+        {/* Overlay para móviles */}
+        {menuAbierto && <div className="sidebar-overlay" onClick={() => setMenuAbierto(false)}></div>}
 
-              <button onClick={() => setMostrarHistorial(true)} style={{ backgroundColor: 'var(--acento-primario)', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
-                📊 Cierre de Caja
-              </button>
-            </div>
-          </div>
-          
-          <div style={{ display: 'flex', gap: '20px', marginBottom: '20px', flexWrap: 'wrap' }}>
-            <div style={{ flex: '1 1 200px', maxWidth: '300px' }}>
-              <TasaBCV tasa={tasaActual} setTasa={setTasaActual} />
-            </div>
-            <div style={{ flex: '2 1 300px' }}>
-              <Filtros busqueda={busqueda} setBusqueda={setBusqueda} categoriaFiltro={categoriaFiltro} setCategoriaFiltro={setCategoriaFiltro} categorias={categoriasUnicas} />
-            </div>
-          </div>
-
-          <h2 style={{ color: 'var(--texto-secundario)', fontSize: '18px', marginTop: 0 }}>
-            Catálogo de Productos {inventarioFiltrado.length === 0 && '(No hay resultados)'}
-          </h2>
-          <div className="vitrina-grid">
-            {inventarioFiltrado.map((producto) => (
-              <ProductoCard key={producto.id} producto={producto} tasaBCV={tasaActual} onAgregarAlCarrito={agregarAlCarrito} />
-            ))}
-          </div>
+        <div className={`sidebar-container ${menuAbierto ? 'open' : ''}`}>
+          <Sidebar vistaActual={vistaActual} cambiarVista={(v) => { setVistaActual(v); setMenuAbierto(false); }} sesion={sesion} />
         </div>
 
-        <div className={`cart-bar ${carritoExpandido ? 'expanded' : ''}`}>
-          <div className="cart-summary" onClick={() => setCarritoExpandido(!carritoExpandido)}>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: '20px', fontWeight: '900', color: 'var(--texto-principal)' }}>
-                ${totalUSD.toFixed(2)}
-              </span>
-              <span style={{ fontSize: '14px', color: 'var(--texto-secundario)', fontWeight: 'bold' }}>
-                Bs {(totalUSD * tasaActual).toFixed(2)}
-              </span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontSize: '14px', color: 'var(--texto-secundario)' }}>{carritoExpandido ? '🔽 Cerrar' : '🔼 Ver Pedido'}</span>
-              <div style={{ backgroundColor: 'var(--alerta)', color: 'white', padding: '4px 12px', borderRadius: '20px', fontWeight: 'bold' }}>
-                {totalItems}
+        <div className="app-layout">
+          <div className="main-content">
+            
+            {/* ENCABEZADO Y PERFIL DE USUARIO */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--borde-suave)', paddingBottom: '15px', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                <button className="menu-btn" onClick={() => setMenuAbierto(true)}>☰</button>
+                <h1 style={{ color: 'var(--texto-principal)', margin: 0, fontSize: '24px' }}>
+                  {configuracion.nombreNegocio || 'MS POS'} 🛒
+                </h1>
+              </div>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                  <span style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--texto-principal)' }}>{sesion.nombre}</span>
+                  <span style={{ fontSize: '11px', color: 'var(--acento-primario)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 'bold' }}>{sesion.rol}</span>
+                </div>
+                {configuracion.modoPOS === 'cajeros' && (
+                  <button 
+                    onClick={() => { setSesion(null); setVistaActual('pos'); }} 
+                    style={{ backgroundColor: 'var(--bg-panel)', border: '1px solid var(--alerta)', color: 'var(--alerta)', padding: '8px 12px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+                  >
+                    Salir
+                  </button>
+                )}
               </div>
             </div>
+            
+            {/* RENDERIZADO DE VISTAS */}
+            {vistaActual === 'pos' && (
+              <div style={{ animation: 'fadeIn 0.3s ease-in-out' }}>
+                <div style={{ display: 'flex', gap: '20px', marginBottom: '20px', flexWrap: 'wrap' }}>
+                  <div style={{ flex: '1 1 200px', maxWidth: '300px' }}>
+                    <TasaBCV tasa={tasaActual} setTasa={setTasaActual} />
+                  </div>
+                  <div style={{ flex: '2 1 300px' }}>
+                    <Filtros 
+                      busqueda={busqueda} 
+                      setBusqueda={setBusqueda} 
+                      categoriaFiltro={categoriaFiltro} 
+                      setCategoriaFiltro={setCategoriaFiltro} 
+                      categorias={categoriasUnicas} 
+                      onEnter={manejarEscaneo} 
+                    />
+                  </div>
+                </div>
+                <h2 style={{ color: 'var(--texto-secundario)', fontSize: '18px', marginTop: 0 }}>
+                  Catálogo de Productos {inventarioFiltrado.length === 0 && '(No hay resultados)'}
+                </h2>
+                <div className="vitrina-grid">
+                  {inventarioFiltrado.map((producto) => (
+                    <ProductoCard key={producto.id} producto={producto} tasaBCV={tasaActual} onAgregarAlCarrito={agregarAlCarrito} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {vistaActual === 'inventario' && <VistaInventario inventario={inventario} onCreate={crearProducto} onUpdate={actualizarProducto} onDelete={eliminarProducto} />}
+            {vistaActual === 'historial' && <VistaHistorial ventas={historialVentas} onDeleteLog={borrarLogVenta} onClearHistory={vaciarHistorial} />}
+            {vistaActual === 'configuracion' && <VistaConfiguracion configuracion={configuracion} setConfiguracion={setConfiguracion} temaActual={temaActual} cambiarTema={setTemaActual} onExportar={exportarRespaldo} onImportar={importarRespaldo} />}
+            
           </div>
 
-          <div className="cart-details">
-            <Carrito 
-              items={carrito} 
+          {/* EL CARRITO */}
+          {vistaActual === 'pos' && (
+            <div className={`cart-bar ${carritoExpandido ? 'expanded' : ''}`}>
+              <div className="cart-summary" onClick={() => setCarritoExpandido(!carritoExpandido)}>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontSize: '20px', fontWeight: '900', color: 'var(--texto-principal)' }}>${totalUSD.toFixed(2)}</span>
+                  <span style={{ fontSize: '14px', color: 'var(--texto-secundario)', fontWeight: 'bold' }}>Bs {(totalUSD * tasaActual).toFixed(2)}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '14px', color: 'var(--texto-secundario)' }}>{carritoExpandido ? '🔽 Cerrar' : '🔼 Ver Pedido'}</span>
+                  <div style={{ backgroundColor: 'var(--alerta)', color: 'white', padding: '4px 12px', borderRadius: '20px', fontWeight: 'bold' }}>{totalItems}</div>
+                </div>
+              </div>
+              <div className="cart-details">
+                <Carrito 
+                  items={carrito} 
+                  tasaBCV={tasaActual} 
+                  onSumar={agregarAlCarrito} 
+                  onRestar={restarDelCarrito} 
+                  onEliminar={eliminarDelCarrito} 
+                  onCobrar={() => { setMostrarCheckout(true); setCarritoExpandido(false); }} 
+                />
+              </div>
+            </div>
+          )}
+
+          {/* EL MODAL DE COBRO Y FACTURA */}
+          {mostrarCheckout && (
+            <CheckoutModal 
+              carrito={carrito} 
               tasaBCV={tasaActual} 
-              onSumar={agregarAlCarrito}
-              onRestar={restarDelCarrito}
-              onEliminar={eliminarDelCarrito}
-              onCobrar={() => {
-                cobrarVenta();
-                setCarritoExpandido(false);
-              }}
+              configuracion={configuracion}
+              onCobrar={cobrarVenta} 
+              onClose={() => setMostrarCheckout(false)} 
             />
-          </div>
+          )}
+
         </div>
-
       </div>
-
-      {mostrarHistorial && (
-        <HistorialModal 
-          ventas={historialVentas} 
-          onCerrar={() => setMostrarHistorial(false)} 
-          onDeleteLog={borrarLogVenta} 
-          onClearHistory={vaciarHistorial}
-        />
-      )}
-
-      {/* RENDERIZADO DEL PANEL CRUD */}
-      {mostrarAdmin && (
-        <AdminModal 
-          inventario={inventario}
-          onClose={() => setMostrarAdmin(false)}
-          onCreate={crearProducto}
-          onUpdate={actualizarProducto}
-          onDelete={eliminarProducto}
-        />
-      )}
-      
-    </div>
-  );
+    );
 }
 
 export default App;

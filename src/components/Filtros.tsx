@@ -4,9 +4,10 @@ interface Props {
   categoriaFiltro: string;
   setCategoriaFiltro: (cat: string) => void;
   categorias: string[];
+  onEnter?: () => void; // NUEVA PROP OPCIONAL
 }
 
-export function Filtros({ busqueda, setBusqueda, categoriaFiltro, setCategoriaFiltro, categorias }: Props) {
+export function Filtros({ busqueda, setBusqueda, categoriaFiltro, setCategoriaFiltro, categorias, onEnter }: Props) {
   return (
     <div style={{ marginBottom: '20px', display: 'flex', gap: '15px', flexWrap: 'wrap', alignItems: 'center', backgroundColor: 'var(--bg-panel)', padding: '15px', borderRadius: '8px', border: '1px solid var(--borde-suave)', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
       
@@ -16,7 +17,13 @@ export function Filtros({ busqueda, setBusqueda, categoriaFiltro, setCategoriaFi
           placeholder="🔍 Buscar producto (ej. Harina, Coca-Cola)..."
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
-          style={{ width: '100%', padding: '10px', borderRadius: '5px', border: '1px solid var(--borde-suave)', boxSizing: 'border-box', outline: 'none', color: 'var(--texto-principal)' }}
+          onKeyDown={(e) => {
+            // Si presionan Enter y hay una función onEnter pasadada, ejecútala
+            if (e.key === 'Enter' && onEnter) {
+              onEnter();
+            }
+          }}
+          style={{ width: '100%', padding: '10px', borderRadius: '5px', border: '1px solid var(--borde-suave)', boxSizing: 'border-box', outline: 'none', backgroundColor: 'var(--bg-app)', color: 'var(--texto-principal)' }}
         />
       </div>
 
@@ -26,7 +33,8 @@ export function Filtros({ busqueda, setBusqueda, categoriaFiltro, setCategoriaFi
           style={{ 
             padding: '8px 15px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontWeight: 'bold', whiteSpace: 'nowrap',
             backgroundColor: categoriaFiltro === '' ? 'var(--acento-primario)' : 'var(--bg-app)', 
-            color: categoriaFiltro === '' ? 'white' : 'var(--texto-secundario)' 
+            color: categoriaFiltro === '' ? 'white' : 'var(--texto-secundario)',
+            border: '1px solid var(--borde-suave)'
           }}
         >
           Todas
@@ -39,7 +47,8 @@ export function Filtros({ busqueda, setBusqueda, categoriaFiltro, setCategoriaFi
             style={{ 
               padding: '8px 15px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontWeight: 'bold', whiteSpace: 'nowrap',
               backgroundColor: categoriaFiltro === cat ? 'var(--acento-primario)' : 'var(--bg-app)', 
-              color: categoriaFiltro === cat ? 'white' : 'var(--texto-secundario)' 
+              color: categoriaFiltro === cat ? 'white' : 'var(--texto-secundario)',
+              border: '1px solid var(--borde-suave)'
             }}
           >
             {cat}

@@ -69,7 +69,7 @@ export function Carrito({ items, tasaBCV, onSumar, onRestar, onEliminar, onCobra
       </div>
 
       <button 
-        onClick={onCobrar}
+        onClick={() => onCobrar()}
         disabled={items.length === 0} 
         style={{ 
           backgroundColor: items.length === 0 ? 'var(--borde-suave)' : 'var(--exito)', 

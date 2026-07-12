@@ -24,7 +24,13 @@ export function TasaBCV({ tasa, setTasa }: Props) {
         step="0.01"
         value={tasa}
         onChange={manejarCambio}
-        style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid var(--borde-suave)', boxSizing: 'border-box', color: 'var(--texto-principal)', outline: 'none' }}
+        style={{ 
+          width: '100%', padding: '8px', borderRadius: '4px', 
+          border: '1px solid var(--borde-suave)', 
+          backgroundColor: 'var(--bg-app)', /* CORRECCIÓN AQUÍ */
+          color: 'var(--texto-principal)', 
+          boxSizing: 'border-box', outline: 'none' 
+        }}
       />
       <p style={{ marginTop: '15px', color: 'var(--texto-secundario)', fontSize: '14px' }}>
         Tasa registrada en sistema: <br/>

@@ -1,16 +1,39 @@
+/* ============ THEME TOKENS (Importados del Core V2) ============ */
 :root {
-  /* Paleta Dark Mode / Midnight */
-  --bg-app: #0f172a;          /* Fondo azul muy oscuro / noche */
-  --bg-panel: #1e293b;        /* Tarjetas un poco más claras para contrastar */
-  --texto-principal: #f8fafc; /* Texto casi blanco puro */
-  --texto-secundario: #94a3b8;/* Gris platinado para subtítulos */
-  --borde-suave: #334155;     /* Bordes oscuros sutiles */
-  
-  /* Acentos vibrantes para modo oscuro */
-  --acento-primario: #8b5cf6; /* Morado eléctrico */
-  --acento-hover: #7c3aed;    /* Morado más oscuro al pasar el mouse */
-  --exito: #10b981;           /* Verde esmeralda brillante */
-  --alerta: #ef4444;          /* Rojo sangre/alerta */
+  /* Por defecto cargará el oscuro si no hay nada, pero lo controlaremos con React */
+  --bg-app: #0f172a; --bg-panel: #1e293b; --texto-principal: #f8fafc; 
+  --texto-secundario: #94a3b8; --borde-suave: #334155;     
+  --acento-primario: #8b5cf6; --exito: #10b981; --alerta: #ef4444;          
+}
+
+:root[data-theme="clasico"] {
+  --bg-app: #F7F5F0; --bg-panel: #FFFFFF; --texto-principal: #12233B; 
+  --texto-secundario: #5B6B84; --borde-suave: #E4DFD3;
+  --acento-primario: #E8A33D; --exito: #3FA34D; --alerta: #D8483B;
+}
+
+:root[data-theme="oscuro"] {
+  --bg-app: #0E1626; --bg-panel: #182238; --texto-principal: #EAEFF8; 
+  --texto-secundario: #AEB9CE; --borde-suave: #2B3852;
+  --acento-primario: #F2C572; --exito: #4ADE80; --alerta: #F87171;
+}
+
+:root[data-theme="faded"] {
+  --bg-app: #EAE4D9; --bg-panel: #F3EEE3; --texto-principal: #5B5346; 
+  --texto-secundario: #8A8171; --borde-suave: #DCD3BF;
+  --acento-primario: #C4986B; --exito: #8FAE8B; --alerta: #C2796B;
+}
+
+:root[data-theme="menta"] {
+  --bg-app: #EFF6F2; --bg-panel: #FFFFFF; --texto-principal: #0F3A2E; 
+  --texto-secundario: #4E6E63; --borde-suave: #DCEBE3;
+  --acento-primario: #2FA88A; --exito: #3FA34D; --alerta: #D8483B;
+}
+
+:root[data-theme="atardecer"] {
+  --bg-app: #FBF1E6; --bg-panel: #FFFFFF; --texto-principal: #3A2418; 
+  --texto-secundario: #7A5C48; --borde-suave: #F0DFC9;
+  --acento-primario: #D9713C; --exito: #6B9E5B; --alerta: #C24A3B;
 }
 
 /* Reseteo básico y aplicación del fondo */
@@ -21,7 +44,6 @@ body {
   transition: background-color 0.3s ease;
 }
 
-/* Efectos globales para que no tengas que escribirlos en cada componente */
 button {
   transition: all 0.2s ease-in-out;
 }
@@ -35,15 +57,16 @@ button:hover:not(:disabled) {
 button:active:not(:disabled) {
   transform: translateY(0);
 }
-/* --- NUEVA ESTRUCTURA RESPONSIVA --- */
+
+/* ==========================================
+   ARQUITECTURA DE PANTALLAS (LAYOUT)
+   ========================================== */
 .app-layout {
-  max-width: 1400px;
-  margin: 0 auto;
+  transition: all 0.3s ease;
 }
 
 .main-content {
-  padding-bottom: 120px; /* Espacio para que el carrito flotante no tape contenido en móvil */
-  transition: all 0.3s;
+  padding-bottom: 120px;
 }
 
 .vitrina-grid {
@@ -53,94 +76,166 @@ button:active:not(:disabled) {
   margin-top: 15px;
 }
 
-/* --- CARRITO (MÓVIL POR DEFECTO) --- */
-.cart-bar {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 90%;
-  max-width: 500px;
-  background-color: var(--bg-panel);
-  border: 1px solid var(--borde-suave);
-  border-radius: 25px;
-  padding: 15px 25px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-  z-index: 100;
+/* --- 1. MÓVIL (Por defecto) --- */
+/* Botón Hamburguesa */
+.menu-btn {
+  background: transparent;
+  border: none;
+  color: var(--texto-principal);
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
   display: flex;
-  flex-direction: column;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  overflow: hidden;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+}
+
+.menu-btn:hover {
+  background-color: var(--bg-panel);
+}
+
+.sidebar-container {
+  background-color: var(--bg-panel);
+  border-right: 1px solid var(--borde-suave);
+  width: 260px; height: 100vh;
+  position: fixed; top: 0; left: 0; z-index: 200;
+  transform: translateX(-100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-container.open { 
+  transform: translateX(0); 
+}
+
+.sidebar-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background-color: rgba(0,0,0,0.6); backdrop-filter: blur(2px); z-index: 150;
+}
+
+.sidebar-btn {
+  background: transparent;
+  border: none;
+  color: var(--texto-principal);
+  text-align: left;
+  padding: 12px 15px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+
+.sidebar-btn:hover {
+  background-color: var(--bg-app);
+}
+
+/* Carrito Flotante (Base Móvil) */
+.cart-bar {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  width: 90%; max-width: 500px;
+  background-color: var(--bg-panel);
+  border: 1px solid var(--borde-suave); border-radius: 25px; padding: 15px 25px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3); z-index: 100;
+  display: flex; flex-direction: column;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); overflow: hidden;
 }
 
 .cart-bar.expanded {
-  bottom: 0;
-  width: 100%;
-  max-width: 600px;
-  height: 85vh;
-  border-radius: 25px 25px 0 0;
-  padding: 25px;
+  bottom: 0; width: 100%; max-width: 600px; height: 85vh;
+  border-radius: 25px 25px 0 0; padding: 25px;
 }
 
-.cart-summary {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-}
+.cart-summary { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+.cart-details { display: none; margin-top: 20px; flex: 1; overflow-y: auto; }
+.cart-bar.expanded .cart-details { display: flex; flex-direction: column; }
 
-.cart-details {
-  display: none;
-  margin-top: 20px;
-  flex: 1;
-  overflow-y: auto;
-  animation: fadeIn 0.3s ease-in-out;
-}
-
-.cart-bar.expanded .cart-details {
-  display: flex;
-  flex-direction: column;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* --- CARRITO (ESCRITORIO / PANTALLA GRANDE) --- */
+/* --- 2. ESCRITORIO NORMAL (Laptops 1024px+): Menú Fijo, Carrito en Esquina --- */
 @media (min-width: 1024px) {
-  .app-layout {
-    display: flex; /* Divide la pantalla en dos columnas */
-    gap: 25px;
-    align-items: flex-start;
+  .menu-btn { display: none !important; }
+  .sidebar-overlay { display: none; }
+  .sidebar-container { transform: translateX(0); }
+  
+  .app-layout { 
+    margin-left: 260px; 
   }
   
-  .main-content {
-    flex: 1; /* El catálogo toma el espacio restante */
-    padding-bottom: 0; /* Quitamos el margen inferior porque ya no hay barra flotante */
-  }
-
+  /* Carrito flotante a la esquina derecha */
   .cart-bar {
-    position: sticky; /* Se queda pegado arriba mientras bajas por el catálogo */
-    top: 20px;
-    bottom: auto;
-    left: auto;
-    transform: none;
-    width: 380px; /* Ancho fijo para la factura */
-    height: calc(100vh - 40px); /* Toma todo el alto de la pantalla */
-    border-radius: 15px;
-    padding: 20px;
-    max-width: none;
+    left: auto; right: 20px; transform: none; width: 340px;
   }
+  
+  .cart-bar.expanded {
+    width: 380px; right: 20px; bottom: 20px; height: 75vh; border-radius: 25px;
+  }
+}
 
-  .cart-summary {
-    display: none; /* Ocultamos la píldora de total en PC porque el carrito siempre está abierto */
+/* --- 3. MONITORES GIGANTES (1400px+): 3 Columnas Fijas --- */
+@media (min-width: 1400px) {
+  .app-layout { display: flex; gap: 20px; align-items: flex-start; }
+  .main-content { flex: 1; min-width: 0; padding-bottom: 0; }
+  
+  .cart-bar {
+    position: sticky; top: 20px; bottom: auto; right: auto;
+    width: 320px; height: calc(100vh - 40px);
+    border-radius: 15px; padding: 20px; max-width: none; flex-shrink: 0;
   }
+  .cart-bar.expanded { height: calc(100vh - 40px); border-radius: 15px; } 
+  .cart-summary { display: none; }
+  .cart-details { display: flex !important; flex-direction: column; margin-top: 0; height: 100%; }
+}
 
-  .cart-details {
-    display: flex !important; /* Forzamos a que el carrito siempre esté visible */
-    flex-direction: column;
-    margin-top: 0;
-    height: 100%;
+/* ==========================================
+   OCULTAR FLECHAS NATIVAS DE NÚMEROS (SPINNERS)
+   ========================================== */
+/* Para Chrome, Safari, Edge, Opera */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Para Firefox */
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* ==========================================
+   TICKET DE FACTURA Y ESTILOS DE IMPRESIÓN
+   ========================================== */
+.receipt {
+  font-family: 'Courier New', Courier, monospace; 
+  background: #fff; 
+  color: #111; 
+  padding: 22px 18px; 
+  max-width: 340px; 
+  margin: 0 auto; 
+  font-size: 13px; 
+  position: relative;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.receipt h3 { text-align: center; margin: 0 0 2px; font-size: 16px; }
+.receipt .center { text-align: center; }
+.receipt hr { border: none; border-top: 1px dashed #999; margin: 10px 0; }
+.receipt table { width: 100%; font-size: 12px; border-collapse: collapse; }
+.receipt td, .receipt th { padding: 4px 2px; border: none; text-align: left; }
+.receipt .totals { margin-top: 10px; }
+.receipt .totals div { display: flex; justify-content: space-between; margin-bottom: 4px; }
+.receipt .totals .grand { font-weight: 900; font-size: 15px; margin-top: 6px; border-top: 1px solid #ddd; padding-top: 6px; }
+
+/* La magia para que solo se imprima el ticket */
+@media print {
+  body * { visibility: hidden; }
+  #zona-impresion, #zona-impresion * { visibility: visible; }
+  #zona-impresion {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
   }
+  .modal-overlay, .modal { box-shadow: none; background: transparent; }
+  .modal-head, .modal-foot { display: none !important; }
 }
